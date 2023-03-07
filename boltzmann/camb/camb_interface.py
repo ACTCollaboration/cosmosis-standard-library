@@ -106,7 +106,7 @@ def setup(options):
     more_config["cosmology_params"] = get_optional_params(options, opt, ["neutrino_hierarchy" ,"theta_H0_range"])
 
     if 'theta_H0_range' in more_config['cosmology_params']:
-        more_config['cosmology_params'] = [float(x) for x in more_config['cosmology_params']['theta_H0_range'].split()]
+        more_config['cosmology_params']['theta_H0_range'] = [float(x) for x in more_config['cosmology_params']['theta_H0_range'].split()]
 
     more_config['do_reionization'] = options.get_bool(opt, 'do_reionization', default=True)
     more_config['use_optical_depth'] = options.get_bool(opt, 'use_optical_depth', default=True)
@@ -250,9 +250,9 @@ def extract_dark_energy_params(block, config, more_config):
 def extract_initial_power_params(block, config, more_config):
     optional_param_names = ["nrun", "nrunrun", "nt", "ntrun", "r"]
     optional_params = get_optional_params(block, cosmo, optional_param_names)
-    try:
+    if block.has_value(cosmo, "A_s"):
         A_s = block[cosmo, 'A_s']
-    except:
+    else:
         A_s = np.exp(block[cosmo, 'logA'])/1e10
     init_power = camb.InitialPowerLaw()
     init_power.set_params(
@@ -543,11 +543,13 @@ def save_matter_power(r, p, block, more_config):
     block[names.growth_parameters, "f_z"] = f
 
     block[names.cosmological_parameters, "sigma_8"] = sigma_8[0]    
+    block[names.cosmological_parameters, "fsigma_8"] = fsigma_8[0]
 
     # sigma12 and S_8 - other variants of sigma_8
     sigma12 = r.get_sigmaR(R=12.0, z_indices=-1, hubble_units=False)
     block[names.cosmological_parameters, "sigma_12"] = sigma12
     block[names.cosmological_parameters, "S_8"] = sigma_8[0]*np.sqrt(p.omegam/0.3)
+    block[names.cosmological_parameters, "S_8CMB"] = sigma_8[0] * (p.omegam/0.3)**0.25
 
 
 def save_cls(r, p, block):
